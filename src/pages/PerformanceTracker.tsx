@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useNavigate } from "react-router-dom"; // for logout/navigation
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ const performanceFormSchema = z.object({
 type PerformanceFormValues = z.infer<typeof performanceFormSchema>;
 
 export default function PerformanceTracker() {
+  const navigate = useNavigate(); // for logout redirect
   const today = new Date().toISOString().split("T")[0];
 
   // 1️⃣ Form setup
@@ -95,9 +97,13 @@ export default function PerformanceTracker() {
       console.log("🛰️ [Tip] Sending entries to /api/generateTip:", entries);
 
       try {
+        const token = localStorage.getItem("authToken"); // ← ADDED: get JWT from localStorage
         const res = await fetch("/api/generateTip", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // ← ADDED: send Authorization header
+          },
           body: JSON.stringify({ entries }),
         });
         console.log("🛰️ [Tip] Response status:", res.status);
@@ -132,8 +138,25 @@ export default function PerformanceTracker() {
     fetchTip();
   }, [entries]);
 
+  // Logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    navigate("/login");
+  };
+
   return (
     <div className="p-6 space-y-8">
+      {/* ➡️ Logout button (Step 2.5.3) */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="text-sm text-red-600"
+        >
+          Log out
+        </Button>
+      </div>
+
       {/* Form + Latest Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card>
