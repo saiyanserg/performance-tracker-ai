@@ -1,4 +1,3 @@
-// src/pages/Login.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -40,9 +39,7 @@ export default function Login() {
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm"
       >
-        <h2 className="text-2xl font-semibold mb-4 text-center">
-          Log In
-        </h2>
+        <h2 className="text-2xl font-semibold mb-4 text-center">Log In</h2>
         {error && (
           <div className="bg-red-100 text-red-700 px-3 py-2 rounded mb-4">
             {error}
