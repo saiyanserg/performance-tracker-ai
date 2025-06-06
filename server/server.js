@@ -81,8 +81,8 @@ app.post("/api/login", async (req, res) => {
 });
 // ─────────────────────────────────────────────────────────────────────
 
-// ── PROTECTED: Generate a sales tip (requires a valid JWT) ───────────
-app.post("/api/generateTip", authenticateToken, async (req, res) => {
+// ── PUBLIC: Generate a sales tip (no JWT required) ───────────────────
+app.post("/api/generateTip", async (req, res) => {
   const { entries } = req.body;
 
   // If no entries, return a default tip immediately
