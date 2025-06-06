@@ -108,16 +108,19 @@ export default function PerformanceTracker() {
     0
   );
 
-  // 7) Average Protection (count per entry)
-  const averageProtection =
-    entries.length > 0
-      ? (
-          entries.reduce((sum, e) => sum + Number(e.protection), 0) /
-          entries.length
-        ).toFixed(1) // one decimal place
-      : "0.0";
+  // 7) Total Protection (count)
+  const totalProtection = entries.reduce(
+    (sum, e) => sum + Number(e.protection),
+    0
+  );
 
-  // 8) Average MRC ($)
+  // 8) Protection % of total lines (one decimal place)
+  const protectionPercent =
+    totalLines > 0
+      ? `${((totalProtection / totalLines) * 100).toFixed(1)}%`
+      : "0.0%";
+
+  // 9) Average MRC ($)
   const averageMRC =
     entries.length > 0
       ? (
@@ -126,7 +129,7 @@ export default function PerformanceTracker() {
         ).toFixed(2)
       : "0.00";
 
-  // 9️⃣ Tip from LLM API (always fetch whenever `entries` changes)
+  // 🔟 Tip from LLM API (always fetch whenever `entries` changes)
   const [tip, setTip] = useState<string>("");
   const [isLoadingTip, setIsLoadingTip] = useState<boolean>(false);
 
@@ -134,14 +137,9 @@ export default function PerformanceTracker() {
     setIsLoadingTip(true);
 
     async function fetchTip() {
-      console.log("🛰️ [Tip] Fetching tip with entries:", entries);
-
-      // ➊ Grab the current token from localStorage
       const token = localStorage.getItem("authToken");
-      console.log("🛰️ [Tip] Using authToken:", token);
 
       try {
-        // ➋ Use full backend URL
         const res = await fetch("http://localhost:4000/api/generateTip", {
           method: "POST",
           headers: {
@@ -150,39 +148,27 @@ export default function PerformanceTracker() {
           },
           body: JSON.stringify({ entries }),
         });
-        console.log("🛰️ [Tip] Response status:", res.status);
-
-        // Always read the raw text, even if status is not OK
         const raw = await res.text();
-        console.log("🛰️ [Tip] Raw response text:", raw);
 
         if (!res.ok) {
-          // Show the raw response so you can see any error message
           setTip(`(error) ${raw}`);
           setIsLoadingTip(false);
           return;
         }
-
-        // Try to parse JSON
         let data: { tip?: string };
         try {
           data = JSON.parse(raw);
-        } catch (parseErr) {
-          console.error("🛰️ [Tip] JSON parse error:", parseErr);
-          // Show raw text so you know what arrived
+        } catch {
           setTip(`(invalid JSON) ${raw}`);
           setIsLoadingTip(false);
           return;
         }
-
         if (data.tip) {
           setTip(data.tip);
         } else {
-          // If there's no "tip" field, show raw JSON so you can inspect it
           setTip(`(no "tip" field) ${JSON.stringify(data)}`);
         }
       } catch (err) {
-        console.error("🛰️ [Tip] fetch threw an error:", err);
         setTip(`(fetch error) ${String(err)}`);
       } finally {
         setIsLoadingTip(false);
@@ -192,7 +178,7 @@ export default function PerformanceTracker() {
     fetchTip();
   }, [entries]);
 
-  // 🔟 Clear Database with confirmation
+  // ⓫ Clear Database with confirmation
   const handleClearDatabase = () => {
     const confirmed = window.confirm(
       "Are you sure you want to delete ALL entries? This action cannot be undone."
@@ -203,37 +189,40 @@ export default function PerformanceTracker() {
     setEntries([]);
   };
 
-  // Logout handler (unchanged)
+  // ⓬ Logout handler
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     navigate("/login");
   };
 
   return (
-    <div className="p-6 space-y-8">
-      {/* ➡️ Logout button */}
-      <div className="flex justify-end">
+    // Replace solid black with a vertical grey gradient:
+    // "bg-gradient-to-b from-gray-800 to-gray-200" 
+    // (dark gray at top fading to light gray at bottom)
+    <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-200 p-6">
+      {/* ➡️ Top Nav */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-tmagenta">PERFORMANCE TRACKER</h1>
         <Button
           variant="outline"
           onClick={handleLogout}
-          className="text-sm text-red-600"
+          className="border-tmagenta text-tmagenta hover:bg-tmagenta hover:text-twhite transition-colors"
         >
           Log out
         </Button>
       </div>
 
-      {/* ===== Form + Latest Overview ===== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* ── Enter Daily Sales Form ───────────────────────────────────────── */}
-        <Card>
-          <CardContent className="space-y-4 pt-6">
-            <h2 className="text-xl font-semibold">Enter Daily Sales</h2>
+        <Card className="bg-twhite shadow-lg rounded-lg border border-gray-200">
+          <CardContent className="space-y-6 p-6">
+            <h2 className="text-2xl font-semibold text-tblack mb-2">Enter Daily Sales</h2>
             <Form {...formHook}>
               <form
                 onSubmit={formHook.handleSubmit(onSubmit)}
                 className="space-y-4"
               >
-                {/* 1) Date */}
+                {/* Date */}
                 <FormField
                   control={formHook.control}
                   name="date"
@@ -244,15 +233,15 @@ export default function PerformanceTracker() {
                           {...hookField}
                           required
                           type="date"
-                          className="text-gray-500"
+                          className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-600" />
                     </FormItem>
                   )}
                 />
 
-                {/* 2) Voice Lines / BTS / IOT / HSI */}
+                {/* Voice Lines / BTS / IOT / HSI */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {(
                     [
@@ -274,16 +263,17 @@ export default function PerformanceTracker() {
                               required
                               type="text"
                               placeholder={label}
+                              className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                             />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-600" />
                         </FormItem>
                       )}
                     />
                   ))}
                 </div>
 
-                {/* 3) Protection / Accessories ($) / MRC ($) / Name of Plan */}
+                {/* Protection / Accessories / MRC / Plan Name */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {/* Protection */}
                   <FormField
@@ -297,9 +287,10 @@ export default function PerformanceTracker() {
                             required
                             type="text"
                             placeholder="Protection"
+                            className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-600" />
                       </FormItem>
                     )}
                   />
@@ -316,9 +307,10 @@ export default function PerformanceTracker() {
                             required
                             type="text"
                             placeholder="Accessories $"
+                            className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-600" />
                       </FormItem>
                     )}
                   />
@@ -335,9 +327,10 @@ export default function PerformanceTracker() {
                             required
                             type="text"
                             placeholder="MRC $"
+                            className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-600" />
                       </FormItem>
                     )}
                   />
@@ -354,15 +347,20 @@ export default function PerformanceTracker() {
                             required
                             type="text"
                             placeholder="Name of Plan"
+                            className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-600" />
                       </FormItem>
                     )}
                   />
                 </div>
 
-                <Button type="submit" disabled={!formHook.formState.isValid}>
+                <Button
+                  type="submit"
+                  disabled={!formHook.formState.isValid}
+                  className="w-full bg-tmagenta text-twhite hover:bg-opacity-90 transition-colors"
+                >
                   Submit
                 </Button>
               </form>
@@ -371,139 +369,144 @@ export default function PerformanceTracker() {
         </Card>
 
         {/* ── Latest Entry Overview ──────────────────────────────────────── */}
-        <Card>
-          <CardContent className="pt-6 space-y-2">
-            <h2 className="text-xl font-semibold">Latest Entry Overview</h2>
-            <p>Voice Lines: {entries[0]?.voiceLines || 0}</p>
-            <p>BTS: {entries[0]?.bts || 0}</p>
-            <p>IOT: {entries[0]?.iot || 0}</p>
-            <p>HSI: {entries[0]?.hsi || 0}</p>
-            <p>Accessories: ${entries[0]?.accessories || "0.00"}</p>
-            <p>Protection: {entries[0]?.protection || 0}</p>
-            <p>Plan Name: {entries[0]?.planName || "—"}</p>
-            <p>MRC: ${entries[0]?.mrc || "0.00"}</p>
+        <Card className="bg-twhite shadow-lg rounded-lg border border-gray-200">
+          <CardContent className="p-6 space-y-3">
+            <h2 className="text-2xl font-semibold text-tmagenta mb-2">Latest Entry</h2>
+            <p className="text-tblack">
+              <span className="font-medium">Voice Lines:</span> {entries[0]?.voiceLines || 0}
+            </p>
+            <p className="text-tblack">
+              <span className="font-medium">BTS:</span> {entries[0]?.bts || 0}
+            </p>
+            <p className="text-tblack">
+              <span className="font-medium">IOT:</span> {entries[0]?.iot || 0}
+            </p>
+            <p className="text-tblack">
+              <span className="font-medium">HSI:</span> {entries[0]?.hsi || 0}
+            </p>
+            <p className="text-tblack">
+              <span className="font-medium">Accessories:</span> $
+              {entries[0]?.accessories || "0.00"}
+            </p>
+            <p className="text-tblack">
+              <span className="font-medium">Protection:</span> {entries[0]?.protection || 0}
+            </p>
+            <p className="text-tblack">
+              <span className="font-medium">Plan Name:</span> {entries[0]?.planName || "—"}
+            </p>
+            <p className="text-tblack">
+              <span className="font-medium">MRC:</span> ${entries[0]?.mrc || "0.00"}
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* ── Summary Statistics ───────────────────────────────────────── */}
-      <Card>
-        <CardContent className="pt-6 space-y-2">
-          <h2 className="text-xl font-semibold mb-2">Summary Statistics</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+      <Card className="mt-8 bg-twhite shadow-lg rounded-lg border border-gray-200">
+        <CardContent className="p-6">
+          <h2 className="text-2xl font-semibold text-tmagenta mb-4">Summary Statistics</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-tblack text-sm">
             {/* TOTAL LINES */}
             <div>
               <p className="font-medium">TOTAL LINES</p>
-              <p>{totalLines}</p>
+              <p className="text-lg">{totalLines}</p>
             </div>
 
             {/* TOTAL VOICE LINES */}
             <div>
               <p className="font-medium">TOTAL VOICE LINES</p>
-              <p>{totalVoiceLines}</p>
+              <p className="text-lg">{totalVoiceLines}</p>
             </div>
 
             {/* TOTAL BTS */}
             <div>
               <p className="font-medium">TOTAL BTS</p>
-              <p>{totalBts}</p>
+              <p className="text-lg">{totalBts}</p>
             </div>
 
             {/* TOTAL HSI */}
             <div>
               <p className="font-medium">TOTAL HSI</p>
-              <p>{totalHsi}</p>
+              <p className="text-lg">{totalHsi}</p>
             </div>
 
             {/* TOTAL IOT */}
             <div>
               <p className="font-medium">TOTAL IOT</p>
-              <p>{totalIot}</p>
+              <p className="text-lg">{totalIot}</p>
             </div>
 
-            {/* PROTECTION AVERAGE */}
+            {/* PROTECTION % */}
             <div>
-              <p className="font-medium">PROTECTION AVERAGE</p>
-              <p>{averageProtection}</p>
+              <p className="font-medium">PROTECTION %</p>
+              <p className="text-lg">{protectionPercent}</p>
             </div>
 
             {/* TOTAL ACCESSORIES */}
             <div>
               <p className="font-medium">TOTAL ACCESSORIES</p>
-              <p>${totalAccessories.toFixed(2)}</p>
+              <p className="text-lg">${totalAccessories.toFixed(2)}</p>
             </div>
 
             {/* AVERAGE MRC */}
             <div>
               <p className="font-medium">AVERAGE MRC</p>
-              <p>${averageMRC}</p>
+              <p className="text-lg">${averageMRC}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* ── Tip of the Day ─────────────────────────────────────────────── */}
-      <Card>
-        <CardContent className="pt-6 space-y-2">
-          <h2 className="text-xl font-semibold mb-2">Tip of the Day</h2>
+      <Card className="mt-8 bg-twhite shadow-lg rounded-lg border border-gray-200">
+        <CardContent className="p-6 space-y-2">
+          <h2 className="text-2xl font-semibold text-tmagenta mb-2">Tip of the Day</h2>
           {isLoadingTip ? (
-            <p className="text-sm text-gray-500">Loading tip…</p>
+            <p className="text-tblack text-sm">Loading tip…</p>
           ) : tip ? (
-            <p className="text-sm">{tip}</p>
+            <p className="text-tblack text-sm">{tip}</p>
           ) : (
-            <p className="text-sm text-gray-500">No tip available.</p>
+            <p className="text-gray-500 text-sm">No tip available.</p>
           )}
         </CardContent>
       </Card>
 
       {/* ── Entries Table + Clear Database ───────────────────────────── */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">All Entries</h2>
+      <Card className="mt-8 bg-twhite shadow-lg rounded-lg border border-gray-200">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-tmagenta">All Entries</h2>
             <Button
               onClick={handleClearDatabase}
               disabled={entries.length === 0}
-              className={`text-sm font-semibold ${
+              className={`mt-3 sm:mt-0 text-sm font-semibold py-2 px-4 rounded ${
                 entries.length === 0
                   ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  : "bg-red-500 hover:bg-red-600 text-white"
-              } py-1 px-3 rounded`}
+                  : "bg-tmagenta text-twhite hover:bg-opacity-90"
+              } transition-colors`}
             >
               Clear Database
             </Button>
           </div>
           <div className="overflow-auto">
-            <table className="min-w-full table-auto">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    Date
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    Voice Lines
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    BTS
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    IOT
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    HSI
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+            <table className="min-w-full table-auto border-collapse">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-tblack">Date</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-tblack">Voice Lines</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-tblack">BTS</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-tblack">IOT</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-tblack">HSI</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-tblack">
                     Accessories ($)
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-tblack">
                     Protection
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-tblack">
                     Plan Name
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    MRC ($)
-                  </th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-tblack">MRC ($)</th>
                 </tr>
               </thead>
               <tbody>
@@ -511,26 +514,26 @@ export default function PerformanceTracker() {
                   entries.map((ent, idx) => (
                     <tr
                       key={idx}
-                      className={idx % 2 === 0 ? "bg-white" : "bg-gray-100"}
+                      className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
                     >
-                      <td className="px-4 py-2 text-sm">{ent.date}</td>
-                      <td className="px-4 py-2 text-sm">{ent.voiceLines}</td>
-                      <td className="px-4 py-2 text-sm">{ent.bts}</td>
-                      <td className="px-4 py-2 text-sm">{ent.iot}</td>
-                      <td className="px-4 py-2 text-sm">{ent.hsi}</td>
-                      <td className="px-4 py-2 text-sm">
+                      <td className="px-4 py-2 text-sm text-tblack">{ent.date}</td>
+                      <td className="px-4 py-2 text-sm text-tblack">{ent.voiceLines}</td>
+                      <td className="px-4 py-2 text-sm text-tblack">{ent.bts}</td>
+                      <td className="px-4 py-2 text-sm text-tblack">{ent.iot}</td>
+                      <td className="px-4 py-2 text-sm text-tblack">{ent.hsi}</td>
+                      <td className="px-4 py-2 text-sm text-tblack">
                         ${Number(ent.accessories).toFixed(2)}
                       </td>
-                      <td className="px-4 py-2 text-sm">{ent.protection}</td>
-                      <td className="px-4 py-2 text-sm">{ent.planName}</td>
-                      <td className="px-4 py-2 text-sm">${ent.mrc}</td>
+                      <td className="px-4 py-2 text-sm text-tblack">{ent.protection}</td>
+                      <td className="px-4 py-2 text-sm text-tblack">{ent.planName}</td>
+                      <td className="px-4 py-2 text-sm text-tblack">${ent.mrc}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td
                       colSpan={9}
-                      className="px-4 py-2 text-center text-gray-500"
+                      className="px-4 py-2 text-center text-gray-500 text-sm"
                     >
                       No entries yet
                     </td>
