@@ -150,7 +150,7 @@ export default function PerformanceTracker() {
     setIsLoadingTip(true);
     try {
       const token = localStorage.getItem("authToken") || "";
-      const res = await fetch("http://localhost:4000/api/generateTip", {
+      const res = await fetch("/api/generateTip", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
