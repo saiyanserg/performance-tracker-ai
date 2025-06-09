@@ -16,7 +16,7 @@ export default function Login() {
   // Controlled form state for user credentials
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  // Holds any login error message (e.g., incorrect credentials, server
+  // Holds any login error message (e.g., incorrect credentials, server errors)
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -32,7 +32,11 @@ export default function Login() {
     setError(null);               // Clear any existing error
 
     try {
-      const res = await fetch("http://localhost:4000/api/login", {
+      // Instrumentation: log which endpoint we're calling
+      const endpoint = "/api/login";
+      console.log("[LOGIN] calling:", endpoint);
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
