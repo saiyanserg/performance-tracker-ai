@@ -1,11 +1,14 @@
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import PerformanceTracker from "./pages/PerformanceTracker";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
-  return localStorage.getItem("authToken")
-    ? children
-    : <Navigate to="/login" replace />;
+  return localStorage.getItem("authToken") ? (
+    children
+  ) : (
+    <Navigate to="/login" replace />
+  );
 }
 
 export default function App() {
@@ -15,7 +18,7 @@ export default function App() {
         {/* Public login page */}
         <Route path="/login" element={<Login />} />
 
-        {/* Protected tracker */}
+        {/* Protected tracker page */}
         <Route
           path="/tracker"
           element={
@@ -29,9 +32,11 @@ export default function App() {
         <Route
           path="*"
           element={
-            localStorage.getItem("authToken")
-              ? <Navigate to="/tracker" replace />
-              : <Navigate to="/login" replace />
+            localStorage.getItem("authToken") ? (
+              <Navigate to="/tracker" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
           }
         />
       </Routes>
