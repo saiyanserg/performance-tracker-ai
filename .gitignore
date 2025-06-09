@@ -25,3 +25,4 @@ dist-ssr
 
 # Ignore our server.env so secrets don’t get committed:
 server/.env
+dist
