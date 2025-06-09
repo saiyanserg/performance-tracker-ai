@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function SupabaseTest() {
-  const [status, setStatus] = useState<'loading'|'success'|'error'>('loading')
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
 
   useEffect(() => {
-    supabase
-      .from('entries')
-      .select('*')
-      .then(({ data, error }) => {
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('entries')
+          .select('*')
+
         if (error) {
           console.error('Supabase error:', error)
           setStatus('error')
@@ -16,11 +18,11 @@ export default function SupabaseTest() {
           console.log('Supabase data:', data)
           setStatus('success')
         }
-      })
-      .catch((err) => {
+      } catch (err: unknown) {
         console.error('Unexpected error:', err)
         setStatus('error')
-      })
+      }
+    })()
   }, [])
 
   return (

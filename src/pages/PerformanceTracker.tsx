@@ -102,18 +102,29 @@ export default function PerformanceTracker() {
   // 4️⃣ Fetch existing entries from Supabase on mount
   useEffect(() => {
     (async () => {
+      // fetch rows without a bad generic
       const { data, error } = await supabase
-        .from<{ date: string; lines: number; accessories: number; protection: number; revenue: number; plan_name: string; created_at: string }>("entries")
+        .from("entries")
         .select("date, lines, accessories, protection, revenue, plan_name, created_at")
         .order("created_at", { ascending: false })
         .limit(100);
 
-      // Handle fetch error
+      // Handle fetch error & map rows into our UI type
       if (error) {
         console.error("Fetch error:", error.message);
       } else {
-        // Map database rows to UI Entry type
-        const mapped = data.map((row) => ({
+      // cast `data` into our expected row shape
+      type Row = {
+        date: string;
+        lines: number;
+        accessories: number;
+        protection: number;
+        revenue: number;
+        plan_name: string;
+        created_at: string;
+      };
+      const rows = (data ?? []) as Row[];
+      const mapped = rows.map(row => ({  
           date: row.date,
           voiceLines: String(row.lines), // total lines from DB
           bts: "0", // placeholder until multi-line supported
@@ -184,7 +195,7 @@ const onSubmit = formHook.handleSubmit(async (values) => {
     .reduce((a, b) => a + b, 0);
 
   // Insert a new entry
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("entries")
     .insert([
       {
@@ -224,7 +235,7 @@ const handleClearDatabase = async () => {
   if (!window.confirm("Are you sure you want to delete ALL entries?")) return;
 
   // Delete all rows by filtering on a non-nullable primary key
-  const { data, error } = await supabase
+  const { data: deletedRows, error } = await supabase
     .from("entries")
     .delete()      
     .not("id", "is", null) 
@@ -234,7 +245,7 @@ const handleClearDatabase = async () => {
     console.error("Delete error:", error.message);
     alert("Could not clear database:\n" + error.message);
   } else {
-    console.log("Deleted rows:", data.length);
+    console.log("Deleted rows:", deletedRows?.length);
     setEntries([]);  // clear your UI state
   }
 };
@@ -337,7 +348,7 @@ const handleClearDatabase = async () => {
                 <FormField
                   control={formHook.control}    // Connects field to React Hook Form
                   name="date"                   // Field name matching Zod schema
-                  render={({ field: hookField }) => (
+                  render={({ field: hookField, fieldState }) => (
                     <FormItem>
                       <FormControl>
                         <Input
@@ -347,7 +358,7 @@ const handleClearDatabase = async () => {
                           className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                         />
                       </FormControl>
-                      <FormMessage className="text-red-600" />
+                      <FormMessage>{fieldState.error?.message}</FormMessage>
                     </FormItem>
                   )}
                 />
@@ -377,7 +388,7 @@ const handleClearDatabase = async () => {
                       key={fieldName}
                       control={formHook.control}
                       name={fieldName as any}
-                      render={({ field: hookField }) => (
+                      render={({ field: hookField, fieldState }) => (
                         <FormItem>
                           <FormControl>
                             <Input
@@ -388,7 +399,7 @@ const handleClearDatabase = async () => {
                               className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                             />
                           </FormControl>
-                          <FormMessage className="text-red-600" />
+                          <FormMessage>{fieldState.error?.message}</FormMessage>
                         </FormItem>
                       )}
                     />
@@ -411,7 +422,7 @@ const handleClearDatabase = async () => {
                   <FormField
                     control={formHook.control}
                     name="protection"
-                    render={({ field: hookField }) => (
+                    render={({ field: hookField, fieldState }) => (
                       <FormItem>
                         <FormControl>
                           <Input
@@ -422,7 +433,7 @@ const handleClearDatabase = async () => {
                             className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                           />
                         </FormControl>
-                        <FormMessage className="text-red-600" />
+                        <FormMessage>{fieldState.error?.message}</FormMessage>
                       </FormItem>
                     )}
                   />
@@ -431,7 +442,7 @@ const handleClearDatabase = async () => {
                   <FormField
                     control={formHook.control}
                     name="accessories"
-                    render={({ field: hookField }) => (
+                    render={({ field: hookField, fieldState }) => (
                       <FormItem>
                         <FormControl>
                           <Input
@@ -442,7 +453,7 @@ const handleClearDatabase = async () => {
                             className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                           />
                         </FormControl>
-                        <FormMessage className="text-red-600" />
+                        <FormMessage>{fieldState.error?.message}</FormMessage>
                       </FormItem>
                     )}
                   />
@@ -451,7 +462,7 @@ const handleClearDatabase = async () => {
                   <FormField
                     control={formHook.control}
                     name="mrc"
-                    render={({ field: hookField }) => (
+                    render={({ field: hookField, fieldState }) => (
                       <FormItem>
                         <FormControl>
                           <Input
@@ -462,7 +473,7 @@ const handleClearDatabase = async () => {
                             className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                           />
                         </FormControl>
-                        <FormMessage className="text-red-600" />
+                         <FormMessage>{fieldState.error?.message}</FormMessage>
                       </FormItem>
                     )}
                   />
@@ -471,7 +482,7 @@ const handleClearDatabase = async () => {
                   <FormField
                     control={formHook.control}
                     name="planName"
-                    render={({ field: hookField }) => (
+                    render={({ field: hookField, fieldState }) => (
                       <FormItem>
                         <FormControl>
                           <Input
@@ -482,7 +493,7 @@ const handleClearDatabase = async () => {
                             className="border-gray-300 focus:border-tmagenta focus:ring-tmagenta"
                           />
                         </FormControl>
-                        <FormMessage className="text-red-600" />
+                         <FormMessage>{fieldState.error?.message}</FormMessage>
                       </FormItem>
                     )}
                   />

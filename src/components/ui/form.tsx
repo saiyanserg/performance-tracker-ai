@@ -1,4 +1,3 @@
-// src/components/ui/form.tsx
 import React from "react";
 import { Controller } from "react-hook-form";
 
@@ -10,14 +9,16 @@ export function Form({ children }: { children: React.ReactNode }) {
 export function FormField(props: {
   name: string;
   control: any;
-  render: (args: { field: any }) => React.ReactNode;
+  render: (args: { field: any; fieldState: any; formState: any }) => React.ReactNode;
 }) {
   // Use react-hook-form’s Controller to wire up each field
   return (
     <Controller
       name={props.name}
       control={props.control}
-      render={({ field }) => <>{props.render({ field })}</>}
+      render={({ field, fieldState, formState }) => (
+        <>{props.render({ field, fieldState, formState })}</>
+      )}
     />
   );
 }
@@ -30,6 +31,6 @@ export function FormControl({ children }: { children: React.ReactNode }) {
   return <div>{children}</div>;
 }
 
-export function FormMessage({ children }: { children: React.ReactNode }) {
-  return <p className="text-red-500 text-sm mt-1">{children}</p>;
+export function FormMessage({ children, className }: { children?: React.ReactNode; className?: string }) {
+  return <p className={`text-red-500 text-sm mt-1 ${className ?? ""}`}>{children}</p>;
 }
