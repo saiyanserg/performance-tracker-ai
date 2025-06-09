@@ -1,44 +1,18 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState } from "react";
 import Login from "./pages/Login";
 import PerformanceTracker from "./pages/PerformanceTracker";
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
-  return localStorage.getItem("authToken") ? (
-    children
-  ) : (
-    <Navigate to="/login" replace />
-  );
-}
-
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public login page */}
-        <Route path="/login" element={<Login />} />
-
-        {/* Protected tracker page */}
-        <Route
-          path="/tracker"
-          element={
-            <ProtectedRoute>
-              <PerformanceTracker />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Fallback: redirect based on auth status */}
-        <Route
-          path="*"
-          element={
-            localStorage.getItem("authToken") ? (
-              <Navigate to="/tracker" replace />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+  // Keep track of whether we're "logged in"
+  const [token, setToken] = useState<string | null>(
+    () => localStorage.getItem("authToken")
   );
+
+  // If there's no token, show the Login page
+  if (!token) {
+    return <Login onSuccess={() => setToken(localStorage.getItem("authToken"))} />;
+  }
+
+  // Otherwise, show the tracker
+  return <PerformanceTracker />;
 }
